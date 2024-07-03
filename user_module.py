@@ -12,8 +12,19 @@ from identifications import bot_token, taca_id, sasha_id, vera_id
 bot = Bot(token= bot_token)
 from identifications import answers_for_key, keys, keys_keys
 
+class UserManager:
+    def __init__(self):
+        self.user_id_command = None
+    
+    def set_user_id(self, user_id):
+        self.user_id_command = user_id
+    
+    def get_user_id(self):
+        return self.user_id_command
+user_manager = UserManager()
+
 good_list = [taca_id, sasha_id, vera_id]
-         
+#user_id_command = 811028066
 class UserState(StatesGroup):
     waiting_for_input  = State()
     waiting_for_input_key = State()
@@ -30,6 +41,9 @@ button_5 = KeyboardButton(text='Предложить функционал')
 Keyboard = ReplyKeyboardMarkup(
     keyboard=[[button_1], [button_2], [button_3], [button_5]], resize_keyboard=True)
 
+button_empty_1 = KeyboardButton(text='Вернуться в главное меню')
+Empty_keyboard = ReplyKeyboardMarkup(keyboard=[[button_empty_1]])
+
 button_key1 = InlineKeyboardButton(text='первый ключ', callback_data='button_key1')
 button_key2 = InlineKeyboardButton(text='второй ключ', callback_data='button_key2')
 button_key3 = InlineKeyboardButton(text='третий ключ', callback_data='button_key3')
@@ -43,8 +57,8 @@ keyboard_keys = InlineKeyboardMarkup(
 
 @router.message(Command(commands= ['start']))
 async def process_start_command(message: Message):
-    user_id = message.from_user.id
-    if int(user_id) in good_list:
+    user_manager.set_user_id(message.from_user.id)
+    if int(user_manager.get_user_id()) in good_list:
         await message.answer(text=introduction, reply_markup=Keyboard)
     else:
         message.answer(text='У Вас нет доступа к данному боту.')
@@ -55,43 +69,49 @@ async def process_keys(message: Message):
 
 @router.message(F.text == 'Предложить функционал')
 async def process_meeting(message: Message, state: FSMContext):
-    await message.answer(text='Введите предложение по улучшению бота или интересующий вас вопрос')
+    await message.answer(text='Введите предложение по улучшению бота или интересующий вас вопрос', reply_markup=Empty_keyboard)
     await state.set_state(UserState.offer)
 
 @router.callback_query(F.text == 'Предложить функционал')
 async def process_button_key(callback_query: CallbackQuery, state: FSMContext):
     meeting_place = callback_query.data
-    await callback_query.message.answer(f"Введите предложение по улучшению бота или интересующий вас вопрос")
+    await callback_query.message.answer(f"Введите предложение по улучшению бота, функционала или интересующий вас вопрос")
     await state.set_state(UserState.offer)
     await state.update_data(meeting_place=meeting_place)
-
+        
 @router.message(UserState.offer)
 async def process_user_input_key1(message: Message, state: FSMContext):
     user_input = message.text
-    await message.answer(f"Спасибо! Данные направлены Александру!")
-    chat_id = sasha_id
-    await bot.send_message(chat_id=chat_id, text=user_input)
+    if user_input != 'Вернуться в главное меню':
+        await message.answer(f"Спасибо! Данные направлены Александру!", reply_markup=Keyboard)
+        chat_id = sasha_id
+        await bot.send_message(chat_id=chat_id, text=user_input)
+    else:
+        await message.answer(f"Ждем твоих предложений)))", reply_markup=Keyboard)
     await state.set_state(None)
     await state.clear()
 
 @router.message(F.text == 'Пойти на свидание')
 async def process_meeting(message: Message, state: FSMContext):
-    await message.answer(text='Введите дату время и место встречи')
+    await message.answer(text='Введите дату время и место встречи', reply_markup=Empty_keyboard)
     await state.set_state(UserState.waiting_for_input)
 
 @router.callback_query(F.text == 'Пойти на свидание')
 async def process_button_key(callback_query: CallbackQuery, state: FSMContext):
     meeting_place = callback_query.data
-    await callback_query.message.answer(f"Введите дату время и место встречи")
+    await callback_query.message.answer(f"Введите дату время и место встречи", reply_markup=Empty_keyboard)
     await state.set_state(UserState.waiting_for_input)
     await state.update_data(meeting_place=meeting_place)
 
 @router.message(UserState.waiting_for_input)
 async def process_user_input_key1(message: Message, state: FSMContext):
     user_input = message.text
-    await message.answer(f"Спасибо! Данные направлены Александру!\nДля отмены или переноса свидания свяжитесь с партнером.")
-    chat_id = sasha_id
-    await bot.send_message(chat_id=chat_id, text=user_input)
+    if user_input != 'Вернуться в главное меню':
+        await message.answer(f"Спасибо! Данные направлены Александру!\nДля отмены или переноса свидания свяжитесь с партнером.", reply_markup=Keyboard)
+        chat_id = sasha_id
+        await bot.send_message(chat_id=chat_id, text=user_input)
+    else:
+        await message.answer(f"Как надумаешь, пиши)))", reply_markup=Keyboard)
     await state.set_state(None)
     await state.clear()
 
@@ -113,10 +133,11 @@ async def process_user_input_key1(message: Message, state: FSMContext):
     data = await state.get_data()
     key_number = data.get("key_number")
     if user_input == answers_for_key[f'key{key_number}']:
-        await message.answer(f"Поздравляю ты ввела правильный ответ.\nКлюч_{key_number} запомни его или запиши: {keys_keys[key_number]}\n\n{keys_text_answer["key1"]}")
+        await message.answer(f"Поздравляю ты ввела правильный ответ.\nКлюч_{key_number} запомни его или запиши: {keys_keys[key_number]}\n\n{keys_text_answer["key"+str(key_number)]}")
         global Keyboard
         Keyboard = ReplyKeyboardMarkup(
         keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5]], resize_keyboard=True)
+        keyboard_keys.inline_keyboard.pop(int(key_number)-1)
         await message.answer(text="Добавлена новая кнопка в главное меню-Получить гороскоп!!!", reply_markup=Keyboard)
         await state.set_state(None)
         await state.clear()
@@ -156,8 +177,8 @@ async def fetch_cat_image():
         out_text = tokenizer.batch_decode(output, skip_special_tokens=True)
         return out_text[0]'''
     
-async def send_message(bot, key_horoscope="daily_horoscope", greeting = "Доброе утро)\n"):
-    chat_id = sasha_id
+async def send_message(bot, chat_id=taca_id, key_horoscope="daily_horoscope", greeting = "Доброе утро, солнце)\n"):
+    #chat_id = sasha_id
     vera = horoscope.Horoscope('aries')
     text = getattr(vera, key_horoscope)()
     #text = transfer(text) #  перевод текста
@@ -183,12 +204,15 @@ async def proces_horoscope(message: Message, bot: Bot):
 
 @router.message(F.text == "Получить гороскоп")
 async def process_cheer_up(message: Message, bot: Bot):
-    await send_message(bot)
+    user_id = 544595768
+    await send_message(bot, chat_id=user_id)
+
 
 @router.callback_query(F.data.startswith("horoscope_"))
 async def process_button_key(callback_query: CallbackQuery, bot: Bot):
     key_horoscope = callback_query.data[10:]
-    await send_message(bot, key_horoscope, greeting='')
+    user_id = callback_query.from_user.id
+    await send_message(bot, chat_id = user_id, key_horoscope=key_horoscope, greeting='')
     await bot.edit_message_reply_markup(
         chat_id=callback_query.message.chat.id,
         message_id=callback_query.message.message_id,

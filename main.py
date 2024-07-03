@@ -5,7 +5,6 @@ import user_module
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime, timedelta
 from identifications import bot_token
-
 #функция конфигурирования и запуска бота
 async def main():
 
@@ -15,7 +14,7 @@ async def main():
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     #scheduler.add_job(user_module.send_message, trigger='date', run_date = datetime.now() + timedelta(seconds=5), 
                       #kwargs={'bot':bot})
-    scheduler.add_job(user_module.send_message, trigger='cron', hour = 6, 
+    scheduler.add_job(user_module.send_message, trigger='cron', hour = 6,
                       start_date = datetime.now(),
                       kwargs={'bot':bot})
     scheduler.start()
