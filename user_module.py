@@ -12,6 +12,7 @@ from identifications import bot_token, sasha_id, vera_id
 bot = Bot(token= bot_token)
 from identifications import answers_for_key, keys, keys_keys
 
+
 class UserManager:
     def __init__(self):
         self.user_id_command = None
