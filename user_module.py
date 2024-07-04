@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 import requests
 from pyhoroscope import horoscope
 from text import introduction, keys_text_answer
-from identifications import bot_token, taca_id, sasha_id, vera_id
+from identifications import bot_token, sasha_id, vera_id
 bot = Bot(token= bot_token)
 from identifications import answers_for_key, keys, keys_keys
 
@@ -23,7 +23,7 @@ class UserManager:
         return self.user_id_command
 user_manager = UserManager()
 
-good_list = [taca_id, sasha_id, vera_id]
+good_list = [sasha_id, vera_id]
 #user_id_command = 811028066
 class UserState(StatesGroup):
     waiting_for_input  = State()
@@ -42,7 +42,7 @@ Keyboard = ReplyKeyboardMarkup(
     keyboard=[[button_1], [button_2], [button_3], [button_5]], resize_keyboard=True)
 
 button_empty_1 = KeyboardButton(text='Вернуться в главное меню')
-Empty_keyboard = ReplyKeyboardMarkup(keyboard=[[button_empty_1]])
+Empty_keyboard = ReplyKeyboardMarkup(keyboard=[[button_empty_1]], resize_keyboard=True)
 
 button_key1 = InlineKeyboardButton(text='первый ключ', callback_data='button_key1')
 button_key2 = InlineKeyboardButton(text='второй ключ', callback_data='button_key2')
@@ -177,7 +177,7 @@ async def fetch_cat_image():
         out_text = tokenizer.batch_decode(output, skip_special_tokens=True)
         return out_text[0]'''
     
-async def send_message(bot, chat_id=taca_id, key_horoscope="daily_horoscope", greeting = "Доброе утро, солнце)\n"):
+async def send_message(bot, chat_id=vera_id, key_horoscope="daily_horoscope", greeting = "Доброе утро, солнце)\n"):
     #chat_id = sasha_id
     vera = horoscope.Horoscope('aries')
     text = getattr(vera, key_horoscope)()
